@@ -1,8 +1,9 @@
 name: Publish Docker image
 
 # Builds the production image and publishes it to GitHub Container Registry
-# (GHCR) on every version tag. amd64 and arm64 are built on native runners,
-# then stitched into one multi-arch manifest — no QEMU emulation.
+# (GHCR) on every version tag. Both architectures build on the self-hosted
+# k3s runner (linux/amd64): amd64 natively, arm64 cross-built via QEMU, then
+# stitched into one multi-arch manifest.
 
 on:
   push:
@@ -23,9 +24,9 @@ jobs:
       matrix:
         include:
           - platform: linux/amd64
-            runner: ubuntu-latest
+            runner: k3s-salilkadam
           - platform: linux/arm64
-            runner: ubuntu-24.04-arm
+            runner: k3s-salilkadam  # QEMU cross-build on the amd64 runner
     permissions:
       contents: read
       packages: write
@@ -37,6 +38,9 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Set up QEMU (arm64 cross-build)
+        uses: docker/setup-qemu-action@v3
 
       - name: Docker metadata (labels)
         id: meta
@@ -85,7 +89,7 @@ jobs:
 
   merge:
     name: Merge multi-arch manifest
-    runs-on: ubuntu-latest
+    runs-on: k3s-salilkadam
     needs: [build]
     permissions:
       contents: read
