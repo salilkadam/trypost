@@ -20,8 +20,10 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
+use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 
 #[Description('Create a board on a connected Pinterest account. Returns the board id, name and cover_url; use the id as meta.board_id when creating a Pinterest post.')]
+#[IsDestructive]
 class CreatePinterestBoardTool extends Tool
 {
     use AuthorizesMcpTool;

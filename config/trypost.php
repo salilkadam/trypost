@@ -18,6 +18,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | MCP server
+    |--------------------------------------------------------------------------
+    |
+    | version: reported as serverInfo.version on /mcp/trypost. The image build
+    | sets APP_BUILD_SHA to the commit it was built from; anything else
+    | (local, tests, an image built without it) reports "dev".
+    |
+    | rate_limit_per_minute: requests per minute per workspace on /mcp/trypost.
+    | Every MCP request counts (initialize, tools/list, tools/call), so it sits
+    | above the REST limit of 60. 0 disables it.
+    |
+    */
+
+    'mcp' => [
+        'version' => env('APP_BUILD_SHA') ?: 'dev',
+        'rate_limit_per_minute' => (int) env('TRYPOST_MCP_RATE_LIMIT_PER_MINUTE', 240),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Changelog ("What's New")
     |--------------------------------------------------------------------------
     |

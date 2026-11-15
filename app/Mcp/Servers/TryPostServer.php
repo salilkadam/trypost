@@ -88,18 +88,37 @@ use App\Mcp\Tools\Webhook\SendWebhookTestTool;
 use App\Mcp\Tools\Webhook\UpdateWebhookTool;
 use App\Mcp\Tools\Workspace\GetWorkspaceTool;
 use Laravel\Mcp\Server;
+use Laravel\Mcp\Server\Contracts\Transport;
 use Laravel\Mcp\Server\Attributes\Icon;
 use Laravel\Mcp\Server\Attributes\Instructions;
 use Laravel\Mcp\Server\Attributes\Name;
-use Laravel\Mcp\Server\Attributes\Version;
 
 #[Name('TryPost')]
-#[Version('1.0.0')]
 #[Icon('images/trypost/icon.png', mimeType: 'image/png')]
 #[Instructions('TryPost is a social media scheduling platform. Use this server to manage posts (drafts, custom times, the channel queue and its free slots, recurrence, threads on X, Bluesky and Mastodon through meta.thread_replies, previews, notes and approvals), ideas, analytics, signatures, labels, social accounts and their posting times, workspaces, outgoing webhooks, repurposes (auto-replicating videos posted outside TryPost), and API keys. Call list-content-types-tool before choosing a content_type or attaching media: it lists the media rules, text and hashtag limits, thread support and the meta each network requires. Media is attached to a post by upload or URL; an upload is temporary, kept for 24 hours and single-use, and every post keeps its own copy of its files. Times are UTC. Members who need approval in a workspace can create and edit posts, but scheduling, queueing or publishing stores their post with status pending_approval until a member who publishes directly calls approve-post-tool or reject-post-tool; get-workspace-tool tells the caller which applies.')]
 class TryPostServer extends Server
 {
     public int $defaultPaginationLength = 100;
+
+    /**
+     * serverInfo.version is the image build SHA (APP_BUILD_SHA, set by the image
+     * build), so a client can tell which build it is talking to. It is not a
+     * #[Version] attribute because the attribute wins over this property and
+     * attribute arguments must be constants. Unset or empty, it is "dev".
+     */
+    public function __construct(Transport $transport)
+    {
+        parent::__construct($transport);
+
+        $this->version = self::buildVersion();
+    }
+
+    public static function buildVersion(): string
+    {
+        $version = trim((string) config('trypost.mcp.version'));
+
+        return $version !== '' ? $version : 'dev';
+    }
 
     protected array $tools = [
         ListPostsTool::class,

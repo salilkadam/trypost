@@ -18,8 +18,10 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
+use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 
 #[Description('Disable a repurpose and clear its watermark. Activating it again starts fresh, so whatever was published meanwhile stays out.')]
+#[IsDestructive]
 class DisableRepurposeTool extends Tool
 {
     use AuthorizesMcpTool, ResolvesWorkspaceRepurpose;

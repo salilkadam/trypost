@@ -9,6 +9,7 @@ use App\Actions\Post\HostInlineMedia;
 use App\Dto\ImportedFile;
 use App\Dto\RemoteFile;
 use App\Enums\Media\Type as MediaType;
+use App\Enums\Post\Status as PostStatus;
 use App\Models\Media;
 use App\Models\Post;
 use App\Models\User;
@@ -34,10 +35,13 @@ class MediaAttacher
     public function __construct(private readonly RemoteMediaImporter $importer) {}
 
     /**
+     * `$expectedStatus` is the MCP expected_status precondition, checked under the
+     * post row lock by AppendPostMedia (PostStatusMismatchException on a mismatch).
+     *
      * @param  array<int, array{url: string, alt?: ?string, meta?: ?array<string, mixed>}>  $urls
      * @return array{attached: array<int, array<string, mixed>>, failed: array<int, string>, failures: array<int, array{url: string, reason: string, message: string}>}
      */
-    public function attachFromUrls(Post $post, array $urls, ?User $actor = null): array
+    public function attachFromUrls(Post $post, array $urls, ?User $actor = null, ?PostStatus $expectedStatus = null): array
     {
         $attached = [];
         $failed = [];
@@ -59,7 +63,7 @@ class MediaAttacher
         }
 
         if ($attached !== []) {
-            AppendPostMedia::execute($post, $attached, $actor);
+            AppendPostMedia::execute($post, $attached, $actor, $expectedStatus);
             $owned = collect($post->media ?? [])->keyBy('id');
             $attached = array_map(fn (array $item): array => $owned->get(data_get($item, 'id'), $item), $attached);
         }

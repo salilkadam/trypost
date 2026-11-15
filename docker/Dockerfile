@@ -210,6 +210,13 @@ RUN composer dump-autoload --optimize --classmap-authoritative --no-scripts \
 
 ENV TRYPOST_TARGET=production
 
+# The commit this image was built from, reported as the MCP serverInfo.version
+# (config/trypost.php mcp.version). Pass it at build time, e.g.
+#   --build-arg APP_BUILD_SHA=$(git rev-parse --short=8 HEAD)
+# to match the <date>-<sha8> image tag. Unset, the server reports "dev".
+ARG APP_BUILD_SHA=
+ENV APP_BUILD_SHA=${APP_BUILD_SHA}
+
 EXPOSE 80 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
