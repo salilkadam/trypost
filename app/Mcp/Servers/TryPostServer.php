@@ -88,10 +88,10 @@ use App\Mcp\Tools\Webhook\SendWebhookTestTool;
 use App\Mcp\Tools\Webhook\UpdateWebhookTool;
 use App\Mcp\Tools\Workspace\GetWorkspaceTool;
 use Laravel\Mcp\Server;
-use Laravel\Mcp\Server\Contracts\Transport;
 use Laravel\Mcp\Server\Attributes\Icon;
 use Laravel\Mcp\Server\Attributes\Instructions;
 use Laravel\Mcp\Server\Attributes\Name;
+use Laravel\Mcp\Server\Contracts\Transport;
 
 #[Name('TryPost')]
 #[Icon('images/trypost/icon.png', mimeType: 'image/png')]
