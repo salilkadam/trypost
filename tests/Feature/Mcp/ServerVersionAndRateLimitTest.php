@@ -19,6 +19,9 @@ beforeEach(function () {
 
 function mcpInitialize(object $test, string $token): TestResponse
 {
+    // Each call is a fresh request: drop the guard's memoized user from the last one.
+    app('auth')->forgetGuards();
+
     return $test->withHeaders([
         'Authorization' => "Bearer {$token}",
         'Accept' => 'application/json, text/event-stream',
