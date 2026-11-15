@@ -28,7 +28,7 @@ trait ChecksExpectedStatus
     {
         return $schema->string()
             ->enum(array_column(PostStatus::cases(), 'value'))
-            ->description('Optional precondition: the status the post must have right now (for example "draft"). When it differs, the call is refused with error expected_status_mismatch and nothing is changed. The check runs under the post row lock, in the same transaction as the change.');
+            ->description('Optional precondition: the status the post must have right now (for example "draft"). When it differs, the call is refused with error expected_status_mismatch and nothing is changed. The check runs under the post row lock, in the same transaction as the change. It guards the status only: a concurrent change to scheduled_at or schedule_mode that leaves the status unchanged is not detected.');
     }
 
     protected function expectedStatus(Request $request): ?PostStatus

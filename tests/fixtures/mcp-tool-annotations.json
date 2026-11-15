@@ -1,5 +1,10 @@
 {
-    "_source": "Derived from the Connect Hub remote-MCP pin table v4 (TryPost section, v3 class column), 2026-11-15. read => readOnlyHint (openWorldHint too for the four reads that call a social network); write => no hints; publish, write->publish and destructive => destructiveHint (MCP has no publish hint, so publish-class tools look destructive to plain clients; the hub pin decides publish vs destructive). Excluded tools keep their upstream hints, plus destructiveHint on create-api-key, create-webhook, update-webhook and attach-media-from-upload.",
+    "_source": "Derived from the Connect Hub remote-MCP pin table v4 (TryPost section, v3 class column), 2026-11-15. read => readOnlyHint (openWorldHint too for the four reads that call a social network); write => no hints; publish, write->publish and destructive => destructiveHint (MCP has no publish hint, so publish-class tools look destructive to plain clients; the hub pin decides publish vs destructive). Excluded tools are never proxied by the hub, so their hints are a judgement call: they keep exactly the upstream hints the pin table's 'upstream annotation' column records ({} (absent) => no hints). This fixture is hand-derived from that table; the table lives outside this repo, so the authoritative check that live annotations agree with it is the hub's own CI (remote-manifests.test.ts).",
+    "pin_table": {
+        "file": "pin-table.md (Connect Hub design, DRAFT v4 2026-11-15)",
+        "version": "v4",
+        "sha256": "c9396885385aed53243133217e1f4c23aebb382bbd0cd54439d7a560bef7edf7"
+    },
     "counts": {
         "destructive": 7,
         "excluded": 14,
@@ -23,9 +28,7 @@
         },
         "attach-media-from-upload-tool": {
             "pin_class": "excluded",
-            "annotations": {
-                "destructiveHint": true
-            }
+            "annotations": {}
         },
         "attach-media-from-url-tool": {
             "pin_class": "write_to_publish",
@@ -47,9 +50,7 @@
         },
         "create-api-key-tool": {
             "pin_class": "excluded",
-            "annotations": {
-                "destructiveHint": true
-            }
+            "annotations": {}
         },
         "create-idea-stage-tool": {
             "pin_class": "write",
@@ -97,9 +98,7 @@
         },
         "create-webhook-tool": {
             "pin_class": "excluded",
-            "annotations": {
-                "destructiveHint": true
-            }
+            "annotations": {}
         },
         "delete-api-key-tool": {
             "pin_class": "excluded",
@@ -479,9 +478,7 @@
         },
         "update-webhook-tool": {
             "pin_class": "excluded",
-            "annotations": {
-                "destructiveHint": true
-            }
+            "annotations": {}
         }
     }
 }

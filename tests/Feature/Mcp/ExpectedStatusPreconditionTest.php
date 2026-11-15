@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Media\PruneTemporaryUploads;
 use App\Actions\Post\AppendPostMedia;
 use App\Actions\Post\CreatePosts;
 use App\Actions\Post\UpdatePost;
@@ -9,6 +10,7 @@ use App\Dto\MediaItem;
 use App\Enums\Post\Status as PostStatus;
 use App\Enums\PostPlatform\ContentType;
 use App\Exceptions\Post\PostStatusMismatchException;
+use App\Jobs\Media\DeleteMediaFiles;
 use App\Mcp\Servers\TryPostServer;
 use App\Mcp\Tools\Post\AttachMediaFromUploadTool;
 use App\Mcp\Tools\Post\AttachMediaFromUrlTool;
@@ -243,6 +245,46 @@ test('AppendPostMedia checks expected_status under the row lock, not on the load
 
     expect(expectedStatusSnapshot($this->scheduled))->toBe($before)
         ->and($before['media'])->toBe([]);
+});
+
+test('a mismatch caught only at the locked re-check after a URL download attaches nothing and leaves only a prunable upload', function () {
+    $mediaBefore = Media::query()->pluck('id')->all();
+
+    // The status changes while the file downloads: the early check passed, the locked one must refuse.
+    Http::fake([
+        'example.com/flip.png' => function () {
+            Post::query()->whereKey($this->scheduled->id)->update(['status' => PostStatus::Draft, 'schedule_mode' => null]);
+
+            return Http::response(file_get_contents(__DIR__.'/../../fixtures/1x1.png'), 200, ['Content-Type' => 'image/png']);
+        },
+    ]);
+
+    TryPostServer::actingAs($this->owner)->tool(AttachMediaFromUrlTool::class, [
+        'post_id' => $this->scheduled->id,
+        'expected_status' => 'scheduled',
+        'urls' => [['url' => 'https://example.com/flip.png']],
+    ])
+        ->assertHasErrors(['expected_status_mismatch'])
+        ->assertStructuredContent(['error' => 'expected_status_mismatch', 'expected_status' => 'scheduled', 'actual_status' => 'draft']);
+
+    Http::assertSent(fn ($request): bool => str_contains($request->url(), 'example.com/flip.png'));
+
+    $fresh = Post::query()->findOrFail($this->scheduled->id);
+    $created = Media::query()->whereNotIn('id', $mediaBefore)->get();
+
+    // Nothing reached the post; the downloaded file exists only as an unowned workspace upload.
+    expect($fresh->media ?? [])->toBe([])
+        ->and($created)->toHaveCount(1)
+        ->and($created->sole()->collection)->toBe(Media::COLLECTION_UPLOADS)
+        ->and($created->sole()->post_id)->toBeNull()
+        ->and(Storage::exists($created->sole()->path))->toBeTrue();
+
+    // The hourly temporary-upload prune removes it once the retention window passes.
+    $this->travel((int) config('trypost.media.upload_retention_hours') + 1)->hours();
+    PruneTemporaryUploads::execute(now());
+
+    expect(Media::query()->whereKey($created->sole()->id)->exists())->toBeFalse();
+    Queue::assertPushed(DeleteMediaFiles::class, fn (DeleteMediaFiles $job): bool => in_array($created->sole()->path, $job->paths, true));
 });
 
 test('clear-post-recurrence-tool refuses a mismatched expected_status and keeps the recurrence', function () {

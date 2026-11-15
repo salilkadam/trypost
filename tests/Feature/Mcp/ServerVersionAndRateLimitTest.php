@@ -60,6 +60,41 @@ test('serverInfo.version falls back to dev when no build sha is set', function (
     'null' => [null],
 ]);
 
+test('APP_BUILD_SHA from the environment becomes trypost.mcp.version', function (?string $env, string $expected) {
+    $saved = getenv('APP_BUILD_SHA');
+
+    try {
+        if ($env === null) {
+            putenv('APP_BUILD_SHA');
+            unset($_ENV['APP_BUILD_SHA'], $_SERVER['APP_BUILD_SHA']);
+        } else {
+            putenv("APP_BUILD_SHA={$env}");
+            $_ENV['APP_BUILD_SHA'] = $_SERVER['APP_BUILD_SHA'] = $env;
+        }
+
+        // Evaluate the real config file, as config:cache does at image start.
+        $config = require config_path('trypost.php');
+
+        expect($config['mcp']['version'])->toBe($expected);
+    } finally {
+        $saved === false ? putenv('APP_BUILD_SHA') : putenv("APP_BUILD_SHA={$saved}");
+        unset($_ENV['APP_BUILD_SHA'], $_SERVER['APP_BUILD_SHA']);
+    }
+})->with([
+    'set by the image build' => ['1a2b3c4d', '1a2b3c4d'],
+    'empty ARG' => ['', 'dev'],
+    'unset' => [null, 'dev'],
+]);
+
+test('the production image stage turns the APP_BUILD_SHA build arg into an env var', function () {
+    $dockerfile = (string) file_get_contents(base_path('docker/Dockerfile'));
+    $production = substr($dockerfile, (int) strpos($dockerfile, 'AS production'));
+
+    expect(strpos($dockerfile, 'AS production'))->not->toBeFalse()
+        ->and($production)->toMatch('/^ARG APP_BUILD_SHA=?\s*$/m')
+        ->and($production)->toMatch('/^ENV APP_BUILD_SHA=\$\{APP_BUILD_SHA\}\s*$/m');
+});
+
 test('the mcp route is rate limited per workspace', function () {
     config(['trypost.mcp.rate_limit_per_minute' => 2]);
 

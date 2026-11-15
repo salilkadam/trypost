@@ -21,11 +21,9 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
-use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 use RuntimeException;
 
 #[Description('Update a webhook endpoint, subscribed events, or status (enabled or disabled). Re-enabling a paused webhook resets consecutive failures. Private or local endpoints are rejected. Updating does not send a test request.')]
-#[IsDestructive]
 class UpdateWebhookTool extends Tool
 {
     use AuthorizesMcpTool;
