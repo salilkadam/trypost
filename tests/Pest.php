@@ -70,9 +70,11 @@ pest()->tia()->locally();
 | Browser Timeout
 |--------------------------------------------------------------------------
 |
-| CI runs the browser suite with four processes per runner, so an action can
-| wait longer than the plugin's 5 seconds before its element is ready. This is
-| the ceiling of each wait, not a delay.
+| CI runs the browser suite with two processes per runner (see tests.yml),
+| so an action can wait longer than the plugin's 5 seconds before its element
+| is ready. This is the ceiling of each wait, not a delay. It is not raised
+| further: the CI timeouts seen at 15s were clicks that had already taken
+| effect, which a longer ceiling would only make slower to report.
 |
 */
 

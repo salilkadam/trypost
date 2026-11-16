@@ -11,6 +11,9 @@ inputs:
   redis-port:
     description: 'Host port mapped to the Redis service.'
     required: true
+  heic:
+    description: 'Install the libheif HEVC decoder and prove Imagick decodes the HEIC fixture (fails the job otherwise).'
+    default: 'true'
 
 runs:
   using: 'composite'
@@ -19,8 +22,38 @@ runs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.4'
-        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_pgsql, pdo_mysql, bcmath, intl, gd, redis
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_pgsql, pdo_mysql, bcmath, intl, gd, redis, imagick
         coverage: none
+
+    - name: Report runner environment
+      shell: bash
+      run: |
+        echo "--- os"; grep -E '^(PRETTY_NAME|VERSION_CODENAME)=' /etc/os-release
+        echo "--- cpus: $(nproc)"
+        echo "--- memory"; free -m
+        echo "--- cgroup cpu.max: $(cat /sys/fs/cgroup/cpu.max 2>&1)"
+        echo "--- image packages"; dpkg-query -W -f='${Package} ${Version}\n' | grep -E 'heif|de265|magick' || echo "(none matched)"
+
+    # Ubuntu 24.04 splits libheif's codecs into plugins that are only
+    # Recommends, so ImageMagick lists HEIC but cannot decode HEVC without
+    # libheif-plugin-libde265 (ImageDecoderException in the HEIC tests).
+    # Older libheif builds link libde265 directly and have no such package.
+    - name: Install HEIC decoder
+      if: inputs.heic == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        timeout 300 sudo apt-get update -qq
+        if apt-cache show libheif-plugin-libde265 > /dev/null 2>&1; then
+          timeout 300 sudo apt-get install -y -qq --no-install-recommends libheif-plugin-libde265
+        else
+          echo "libheif-plugin-libde265 is not packaged here; relying on the preflight below to prove HEVC decoding"
+        fi
+
+    - name: Verify HEIC decoding
+      if: inputs.heic == 'true'
+      shell: bash
+      run: php .github/actions/setup-laravel/verify-heic.php tests/fixtures/sample.heic
 
     - name: Setup Node.js
       if: inputs.node == 'true'
