@@ -13,7 +13,7 @@ inputs:
     required: true
   heic:
     description: 'Install the libheif HEVC decoder and prove Imagick decodes the HEIC fixture (fails the job otherwise).'
-    default: 'false'
+    default: 'true'
 
 runs:
   using: 'composite'
