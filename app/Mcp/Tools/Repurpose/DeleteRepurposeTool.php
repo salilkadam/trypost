@@ -16,8 +16,10 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
+use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 
 #[Description('Delete a repurpose. Polling stops immediately; posts it already created stay in the calendar.')]
+#[IsDestructive]
 class DeleteRepurposeTool extends Tool
 {
     use AuthorizesMcpTool, ResolvesWorkspaceRepurpose;

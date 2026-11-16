@@ -6,6 +6,7 @@ namespace App\Actions\Post;
 
 use App\Enums\Post\Status as PostStatus;
 use App\Enums\PostPlatform\ContentType;
+use App\Exceptions\Post\PostStatusMismatchException;
 use App\Models\Post;
 use App\Models\User;
 use App\Support\Media\MediaCopyBatch;
@@ -23,13 +24,25 @@ class AppendPostMedia
      * through UpdatePost, so a member who needs approval sends it back for
      * approval like any other edit, even when the approval landed just before.
      *
+     * When `$expectedStatus` is given (MCP expected_status), the post is re-read under its
+     * row lock in the same transaction before anything is appended; a different status
+     * throws PostStatusMismatchException and the transaction rolls back.
+     *
      * @param  list<array<string, mixed>>  $items
      *
      * @throws ValidationException
+     * @throws PostStatusMismatchException
      */
-    public static function execute(Post $post, array $items, ?User $actor): void
+    public static function execute(Post $post, array $items, ?User $actor, ?PostStatus $expectedStatus = null): void
     {
-        PostApproval::locked($post, fn () => MediaCopyBatch::run(function (MediaCopyBatch $batch) use ($post, $items, $actor): void {
+        PostApproval::locked($post, fn () => MediaCopyBatch::run(function (MediaCopyBatch $batch) use ($post, $items, $actor, $expectedStatus): void {
+            if ($expectedStatus !== null) {
+                PostStatusMismatchException::assertMatches(
+                    $expectedStatus,
+                    Post::query()->whereKey($post->id)->lockForUpdate()->firstOrFail()->status,
+                );
+            }
+
             $post->appendMedia($items, $batch);
 
             if (PostStatusRules::blocksEditing($post)) {

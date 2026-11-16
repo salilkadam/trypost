@@ -19,8 +19,10 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
+use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 
 #[Description('Replace the posting schedule of a channel: time zone, weekly posting goal and the seven days (day 0 is Sunday) with their posting times: at most 4 unique HH:mm times per day, in the channel time zone. A null posting_schedule clears it. Queued posts whose slot no longer exists are re-placed into the first free slots, and a time zone change moves every queued post to the same local clock time in the new zone. Only workspace admins can edit it.')]
+#[IsDestructive]
 class UpdatePostingScheduleTool extends Tool
 {
     use AuthorizesMcpTool;

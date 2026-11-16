@@ -14,6 +14,7 @@ use App\Enums\Post\QueuePosition;
 use App\Enums\Post\ScheduleMode;
 use App\Enums\Post\Status as PostStatus;
 use App\Enums\PostPlatform\ContentType;
+use App\Exceptions\Post\PostStatusMismatchException;
 use App\Jobs\PublishPost;
 use App\Models\Post;
 use App\Models\User;
@@ -36,20 +37,25 @@ class UpdatePost
      * A pending post is changed under its approval lock (see PostApproval::whilePending()).
      * `queue_slot` (an instant, set only by MoveChannelPostToQueueSlot under the channel lock)
      * stores a single-channel post in queue mode at that slot without reflowing the queue.
+     * `$expectedStatus` (MCP expected_status) is compared with the status re-read under the
+     * row lock in the write transaction; on a mismatch PostStatusMismatchException is thrown
+     * and the transaction rolls back, so nothing changes.
      *
      * @return array{post: Post, action: PostAction|null}
+     *
+     * @throws PostStatusMismatchException
      */
-    public static function execute(Workspace $workspace, Post $post, array $data, ?User $actor = null): array
+    public static function execute(Workspace $workspace, Post $post, array $data, ?User $actor = null, ?PostStatus $expectedStatus = null): array
     {
         return $post->status === PostStatus::PendingApproval
-            ? PostApproval::whilePending($post, fn (): array => self::apply($workspace, $post, $data, $actor))
-            : self::apply($workspace, $post, $data, $actor);
+            ? PostApproval::whilePending($post, fn (): array => self::apply($workspace, $post, $data, $actor, $expectedStatus))
+            : self::apply($workspace, $post, $data, $actor, $expectedStatus);
     }
 
     /**
      * @return array{post: Post, action: PostAction|null}
      */
-    private static function apply(Workspace $workspace, Post $post, array $data, ?User $actor): array
+    private static function apply(Workspace $workspace, Post $post, array $data, ?User $actor, ?PostStatus $expectedStatus): array
     {
         if (PostStatusRules::blocksEditing($post)) {
             return ['post' => $post, 'action' => PostAction::Finalized];
@@ -64,8 +70,8 @@ class UpdatePost
         }
 
         return $post->hasChannel()
-            ? self::updateChannelPost($workspace, $post, $data, $actor)
-            : self::updateDraftWithoutChannel($post, $data);
+            ? self::updateChannelPost($workspace, $post, $data, $actor, $expectedStatus)
+            : self::updateDraftWithoutChannel($post, $data, $expectedStatus);
     }
 
     /**
@@ -76,7 +82,7 @@ class UpdatePost
      * @param  array<string, mixed>  $data
      * @return array{post: Post, action: PostAction|null}
      */
-    private static function updateDraftWithoutChannel(Post $post, array $data): array
+    private static function updateDraftWithoutChannel(Post $post, array $data, ?PostStatus $expectedStatus): array
     {
         $status = (string) data_get($data, 'status', $post->status->value);
 
@@ -88,8 +94,8 @@ class UpdatePost
             throw ValidationException::withMessages(['content_type' => __('posts.errors.choose_channel')]);
         }
 
-        return MediaCopyBatch::run(function (MediaCopyBatch $batch) use ($post, $data): array {
-            if (self::finalizedMeanwhile($post)) {
+        return MediaCopyBatch::run(function (MediaCopyBatch $batch) use ($post, $data, $expectedStatus): array {
+            if (self::finalizedMeanwhile($post, $expectedStatus)) {
                 return ['post' => $post, 'action' => PostAction::Finalized];
             }
 
@@ -116,7 +122,7 @@ class UpdatePost
      * @param  array<string, mixed>  $data
      * @return array{post: Post, action: PostAction|null}
      */
-    private static function updateChannelPost(Workspace $workspace, Post $post, array $data, ?User $actor): array
+    private static function updateChannelPost(Workspace $workspace, Post $post, array $data, ?User $actor, ?PostStatus $expectedStatus): array
     {
         $position = filled(data_get($data, 'queue')) ? QueuePosition::from(data_get($data, 'queue')) : null;
         $channel = $post->socialAccount;
@@ -190,8 +196,8 @@ class UpdatePost
             ]],
         ], $post->media ?? []));
 
-        $write = fn (): array => MediaCopyBatch::run(function (MediaCopyBatch $batch) use ($post, $channel, $data, $resolved, $scheduledAt, $mode, $position, $pending, $approvesHolder, $previousStatus, $storedStatus, $actor): array {
-            if (self::finalizedMeanwhile($post)) {
+        $write = fn (): array => MediaCopyBatch::run(function (MediaCopyBatch $batch) use ($post, $channel, $data, $resolved, $scheduledAt, $mode, $position, $pending, $approvesHolder, $previousStatus, $storedStatus, $actor, $expectedStatus): array {
+            if (self::finalizedMeanwhile($post, $expectedStatus)) {
                 return ['post' => $post, 'action' => PostAction::Finalized];
             }
 
@@ -247,10 +253,15 @@ class UpdatePost
     /**
      * Re-reads the post under a row lock inside the write transaction, so a post the
      * scheduler claimed or another request settled after it was loaded is left alone.
+     * The caller's expected status, if any, is checked against that locked row too.
+     *
+     * @throws PostStatusMismatchException
      */
-    private static function finalizedMeanwhile(Post $post): bool
+    private static function finalizedMeanwhile(Post $post, ?PostStatus $expectedStatus = null): bool
     {
         $locked = Post::query()->whereKey($post->id)->lockForUpdate()->firstOrFail();
+
+        PostStatusMismatchException::assertMatches($expectedStatus, $locked->status);
 
         if (! PostStatusRules::blocksEditing($locked)) {
             return false;

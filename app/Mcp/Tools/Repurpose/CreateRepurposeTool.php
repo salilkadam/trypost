@@ -20,8 +20,10 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
+use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 
 #[Description('Create a repurpose. It starts as a draft and only replicates videos published after it is activated. Source must be an Instagram or Facebook account, the only networks that allow downloading the video. Each destination picks the format it publishes as, so a Story can land as a Reel. Google Business cannot be a destination. Required meta (TikTok privacy_level, Pinterest board_id, Discord channel_id) is checked when the repurpose is activated and on every update of an active one. A source account can back one repurpose per source_format and cannot also be a destination.')]
+#[IsDestructive]
 class CreateRepurposeTool extends Tool
 {
     use AuthorizesMcpTool;

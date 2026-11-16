@@ -1,0 +1,484 @@
+{
+    "_source": "Derived from the Connect Hub remote-MCP pin table v4 (TryPost section, v3 class column), 2026-11-15. read => readOnlyHint (openWorldHint too for the four reads that call a social network); write => no hints; publish, write->publish and destructive => destructiveHint (MCP has no publish hint, so publish-class tools look destructive to plain clients; the hub pin decides publish vs destructive). Excluded tools are never proxied by the hub, so their hints are a judgement call: they keep exactly the upstream hints the pin table's 'upstream annotation' column records ({} (absent) => no hints). This fixture is hand-derived from that table; the table lives outside this repo, so the authoritative check that live annotations agree with it is the hub's own CI (remote-manifests.test.ts).",
+    "pin_table": {
+        "file": "pin-table.md (Connect Hub design, DRAFT v4 2026-11-15)",
+        "version": "v4",
+        "sha256": "c9396885385aed53243133217e1f4c23aebb382bbd0cd54439d7a560bef7edf7"
+    },
+    "counts": {
+        "destructive": 7,
+        "excluded": 14,
+        "publish": 16,
+        "read": 28,
+        "write": 13,
+        "write_to_publish": 5
+    },
+    "tools": {
+        "activate-repurpose-tool": {
+            "pin_class": "publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "approve-post-tool": {
+            "pin_class": "publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "attach-media-from-upload-tool": {
+            "pin_class": "excluded",
+            "annotations": {}
+        },
+        "attach-media-from-url-tool": {
+            "pin_class": "write_to_publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "clear-post-recurrence-tool": {
+            "pin_class": "write_to_publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "copy-posting-schedule-tool": {
+            "pin_class": "publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "create-api-key-tool": {
+            "pin_class": "excluded",
+            "annotations": {}
+        },
+        "create-idea-stage-tool": {
+            "pin_class": "write",
+            "annotations": {}
+        },
+        "create-idea-tool": {
+            "pin_class": "write",
+            "annotations": {}
+        },
+        "create-label-tool": {
+            "pin_class": "write",
+            "annotations": {}
+        },
+        "create-pinterest-board-tool": {
+            "pin_class": "publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "create-post-note-tool": {
+            "pin_class": "write",
+            "annotations": {}
+        },
+        "create-post-tool": {
+            "pin_class": "write_to_publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "create-posts-tool": {
+            "pin_class": "write_to_publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "create-repurpose-tool": {
+            "pin_class": "publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "create-signature-tool": {
+            "pin_class": "write",
+            "annotations": {}
+        },
+        "create-webhook-tool": {
+            "pin_class": "excluded",
+            "annotations": {}
+        },
+        "delete-api-key-tool": {
+            "pin_class": "excluded",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "delete-idea-stage-tool": {
+            "pin_class": "destructive",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "delete-ideas-tool": {
+            "pin_class": "destructive",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "delete-label-tool": {
+            "pin_class": "destructive",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "delete-post-note-tool": {
+            "pin_class": "destructive",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "delete-post-tool": {
+            "pin_class": "destructive",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "delete-repurpose-tool": {
+            "pin_class": "destructive",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "delete-signature-tool": {
+            "pin_class": "destructive",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "delete-webhook-tool": {
+            "pin_class": "excluded",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "disable-repurpose-tool": {
+            "pin_class": "publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "duplicate-idea-tool": {
+            "pin_class": "write",
+            "annotations": {}
+        },
+        "generate-posting-schedule-tool": {
+            "pin_class": "publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "get-analytics-publication-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "get-analytics-report-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "get-channel-insights-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "get-idea-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "get-instagram-audio-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true,
+                "openWorldHint": true
+            }
+        },
+        "get-post-metrics-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "get-post-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "get-posting-schedule-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "get-repurpose-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "get-tiktok-creator-info-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "get-webhook-tool": {
+            "pin_class": "excluded",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "get-workspace-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "list-api-keys-tool": {
+            "pin_class": "excluded",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "list-channel-publications-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "list-content-types-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "list-discord-channels-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true,
+                "openWorldHint": true
+            }
+        },
+        "list-free-slots-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "list-idea-stages-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "list-ideas-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "list-labels-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "list-pinterest-boards-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true,
+                "openWorldHint": true
+            }
+        },
+        "list-post-notes-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "list-posts-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "list-repurpose-items-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "list-repurpose-source-formats-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "list-repurposes-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "list-signatures-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "list-social-accounts-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "list-webhook-logs-tool": {
+            "pin_class": "excluded",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "list-webhooks-tool": {
+            "pin_class": "excluded",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "move-ideas-tool": {
+            "pin_class": "write",
+            "annotations": {}
+        },
+        "move-post-to-slot-tool": {
+            "pin_class": "publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "pause-repurpose-tool": {
+            "pin_class": "publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "preview-post-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true
+            }
+        },
+        "publish-post-tool": {
+            "pin_class": "publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "reject-post-tool": {
+            "pin_class": "publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "reorder-idea-stages-tool": {
+            "pin_class": "write",
+            "annotations": {}
+        },
+        "reorder-queue-tool": {
+            "pin_class": "publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "replay-webhook-log-tool": {
+            "pin_class": "excluded",
+            "annotations": {
+                "openWorldHint": true
+            }
+        },
+        "request-media-upload-tool": {
+            "pin_class": "excluded",
+            "annotations": {}
+        },
+        "resume-repurpose-tool": {
+            "pin_class": "publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "rotate-webhook-secret-tool": {
+            "pin_class": "excluded",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "search-instagram-audio-tool": {
+            "pin_class": "read",
+            "annotations": {
+                "readOnlyHint": true,
+                "openWorldHint": true
+            }
+        },
+        "send-webhook-test-tool": {
+            "pin_class": "excluded",
+            "annotations": {
+                "openWorldHint": true
+            }
+        },
+        "set-post-recurrence-tool": {
+            "pin_class": "publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "update-idea-stage-tool": {
+            "pin_class": "write",
+            "annotations": {}
+        },
+        "update-idea-tool": {
+            "pin_class": "write",
+            "annotations": {}
+        },
+        "update-label-tool": {
+            "pin_class": "write",
+            "annotations": {}
+        },
+        "update-post-note-tool": {
+            "pin_class": "write",
+            "annotations": {}
+        },
+        "update-post-tool": {
+            "pin_class": "write_to_publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "update-posting-schedule-tool": {
+            "pin_class": "publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "update-repurpose-tool": {
+            "pin_class": "publish",
+            "annotations": {
+                "destructiveHint": true
+            }
+        },
+        "update-signature-tool": {
+            "pin_class": "write",
+            "annotations": {}
+        },
+        "update-webhook-tool": {
+            "pin_class": "excluded",
+            "annotations": {}
+        }
+    }
+}

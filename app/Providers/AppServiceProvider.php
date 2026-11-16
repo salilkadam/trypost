@@ -167,6 +167,25 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($key);
         });
 
+        // /mcp/trypost, per workspace: defence in depth behind the Connect Hub's own
+        // limit. Keyed like the REST limiter; the route authenticates first.
+        RateLimiter::for('mcp', function (Request $request): Limit {
+            $perMinute = (int) config('trypost.mcp.rate_limit_per_minute');
+
+            if ($perMinute <= 0) {
+                return Limit::none();
+            }
+
+            $user = $request->user();
+            $workspaceId = $user?->current_workspace_id;
+
+            $key = $workspaceId !== null
+                ? "mcp:workspace:{$workspaceId}"
+                : 'mcp:user:'.($user?->id ?? $request->ip());
+
+            return Limit::perMinute($perMinute)->by($key);
+        });
+
         RateLimiter::for(
             'mcp-oauth-registration',
             fn (Request $request): Limit => Limit::perMinute(30)->by($request->ip()),

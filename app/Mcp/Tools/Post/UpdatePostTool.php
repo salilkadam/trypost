@@ -9,9 +9,11 @@ use App\Actions\Post\UpdatePost;
 use App\Enums\Post\Action as PostAction;
 use App\Enums\Post\QueuePosition;
 use App\Enums\Post\Status;
+use App\Exceptions\Post\PostStatusMismatchException;
 use App\Exceptions\Post\QueueBusyException;
 use App\Http\Resources\Api\PostResource;
 use App\Mcp\Concerns\AuthorizesMcpTool;
+use App\Mcp\Concerns\ChecksExpectedStatus;
 use App\Mcp\Concerns\DescribesPostMedia;
 use App\Models\Post;
 use App\Models\Workspace;
@@ -26,11 +28,14 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
+use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 
 #[Description('Update one post for its existing social account. Caption, media, content_type, meta (platform settings, merged with the stored ones), status, schedule, queue and labels may change; content_type and meta are top-level fields because a post has exactly one social account, which is fixed. When the acting member needs approval in this workspace, a scheduled, queued or publish-now update is stored with status pending_approval instead. meta is merged with the stored settings: send null for a key to clear it; thread_replies replaces the whole list. To place the post in one specific free slot use move-post-to-slot-tool. Posts that are publishing, published or failed cannot be changed or deleted. To publish a thread on X, Bluesky or Mastodon, put the follow-up posts in meta.thread_replies: up to 24 replies published under the post, each {text, media} with up to 4 media items given by url, id or upload_token, e.g. [{"text": "2/ ..."}, {"text": "3/ ...", "media": [{"url": "https://..."}]}]. Each reply must fit the text limit of the account and follows the media rules of a post on that network. Before a post can be scheduled or published it needs: TikTok meta.privacy_level (get-tiktok-creator-info-tool), Pinterest meta.board_id (list-pinterest-boards-tool), Discord meta.channel_id (list-discord-channels-tool), Google Business events and offers meta.event (title and dates), YouTube a title (meta.title, or the first line of the text); list-content-types-tool lists them per platform as required_meta. A scheduled or published post also needs text or media.')]
+#[IsDestructive]
 class UpdatePostTool extends Tool
 {
     use AuthorizesMcpTool;
+    use ChecksExpectedStatus;
     use DescribesPostMedia;
 
     public function handle(Request $request): Response|ResponseFactory
@@ -50,7 +55,14 @@ class UpdatePostTool extends Tool
             return $denied;
         }
 
+        $expectedStatus = $this->expectedStatus($request);
+
+        if ($mismatch = $this->refuseUnlessStatus($expectedStatus, $post)) {
+            return $mismatch;
+        }
+
         $input = $request->all();
+        unset($input['expected_status']);
 
         $validated = Validator::make($input, PostRequestRules::update($workspace, $post, $input), PostRequestRules::messages(), PostRequestRules::attributes())
             ->after(fn (ValidatorContract $validator) => PostRequestRules::afterUpdate($validator, $post, $input))
@@ -59,7 +71,9 @@ class UpdatePostTool extends Tool
         $validated = HostInlineMedia::forPost($workspace, $post->allowedMediaTypes(), $validated);
 
         try {
-            $result = UpdatePost::execute($workspace, $post, $validated, $request->user());
+            $result = UpdatePost::execute($workspace, $post, $validated, $request->user(), $expectedStatus);
+        } catch (PostStatusMismatchException $exception) {
+            return $this->statusMismatch($exception);
         } catch (QueueBusyException) {
             return Response::error(__('posts.errors.queue_busy'));
         }
@@ -79,6 +93,7 @@ class UpdatePostTool extends Tool
     {
         return [
             'post_id' => $schema->string()->required()->description('UUID of the post to update.'),
+            'expected_status' => $this->expectedStatusSchema($schema),
             'content' => $schema->string()->description('The post text, in plain text; use \n for line breaks. When link defusing is on, an X post publishes its links non-clickable (example(.)com); preview-post-tool shows the exact text each network gets. The text must fit the account limit (max_content_length in list-social-accounts-tool; on X, 25000 for an account with long_posts, else 280), Instagram takes at most 5 hashtags, and stories publish no text.'),
             'media' => $this->mediaSchema($schema, 'Replaces the post media; omit to keep the current media.'),
             'scheduled_at' => $schema->string()->description('ISO 8601 datetime in the future and before 2038-01-19, e.g. 2026-05-10T15:30:00Z; without an offset it is read as UTC. Times in responses are UTC (Y-m-d H:i:s). Required for status scheduled unless the post already has a future schedule or queue is sent.'),

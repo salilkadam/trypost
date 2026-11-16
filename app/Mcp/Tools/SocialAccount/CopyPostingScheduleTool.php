@@ -16,8 +16,10 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
+use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 
 #[Description('Copy the posting schedule of another channel of the workspace onto this one. The source must have a schedule. Queued posts whose slot no longer exists are re-placed. Only workspace admins can copy it.')]
+#[IsDestructive]
 class CopyPostingScheduleTool extends Tool
 {
     use AuthorizesMcpTool;
